@@ -220,15 +220,55 @@ tsJoined_filled_df = ffill_windows(tsJoined_df, timeColumn, sensorNameColumn, se
 
 # COMMAND ----------
 
-display(tsJoined_filled_df)
-
-# COMMAND ----------
-
 tsJoined_filled_df.count()
 
 # COMMAND ----------
 
 # MAGIC %md ### 1. Time measurement
+
+# COMMAND ----------
+
+import datetime
+
+stopwatch_end = datetime.datetime.now()
+print("Finished > " + str(stopwatch_end))
+print("Time elapsed > " + str(stopwatch_end-stopwatch_start))
+
+# COMMAND ----------
+
+# MAGIC %md ## Transform the long table to a wide table
+
+# COMMAND ----------
+
+# MAGIC %md ### 1. Create view and pivot the results
+
+# COMMAND ----------
+
+tsJoined_filled_df.createOrReplaceTempView("tempd")
+
+# COMMAND ----------
+
+sensorIds = ','.join(map("'{0}'".format, sensors))
+sqlQuery = \
+"SELECT * FROM ( " \
+  "SELECT time, sensorid, value_filled " \
+  "FROM tempd " \
+") " \
+"PIVOT (" \
+  "min(value_filled) " \
+  "FOR sensorid in (" + sensorIds + ") " \
+") " \
+"ORDER BY time "
+
+pivotted_df = spark.sql(sqlQuery)
+
+# COMMAND ----------
+
+display(pivotted_df)
+
+# COMMAND ----------
+
+# MAGIC %md ### 2. Time measurement
 
 # COMMAND ----------
 
